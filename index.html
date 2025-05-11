@@ -1,120 +1,462 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Outfit Planer</title>
-  <style>
-    body { font-family: sans-serif; margin: 1rem; }
-    input, select, button { margin: 0.5rem 0; display: block; }
-    .gallery, .canvas { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
-    .item { border: 1px solid #ccc; padding: 0.5rem; text-align: center; width: 100px; }
-    img { max-width: 100%; height: auto; }
-    .canvas { border-top: 2px solid #000; padding-top: 1rem; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="manifest" href="manifest.json">
+<title>Outfit Planer</title>
+<style>
+:root { --accent: #7b68ee; --bg: #f7f8ff; --card:#fff; --border:#ddd; --shadow:0 2px 8px rgba(0,0,0,.05); }
+* { box-sizing:border-box; border-radius:1rem; }
+body { font-family:'Segoe UI',sans-serif; background:var(--bg); margin:0; padding:1rem; }
+header { display:flex; justify-content:space-between; align-items:center; }
+nav { display:flex; gap:.5rem; }
+nav button { background:transparent; border:none; padding:.5rem; cursor:pointer; position:relative; font-size:1rem; color:blue;}
+nav button.active::after { content:''; position:absolute; bottom:0; left:0; right:0; height:3px; background:var(--accent); }
+.section { display:none; padding:1rem; background:var(--card); box-shadow:var(--shadow); margin-top:1rem; }
+.section.active { display:block; }
+.gallery, .outfits { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:.5rem; }
+.card { background:var(--card); padding:.5rem; border:1px solid var(--border); box-shadow:var(--shadow); text-align:center; position:relative; }
+.card.add-card { border-style:dashed; color: var(--accent); cursor:pointer; }
+.card button { background:transparent; }
+button, .pill { background:var(--accent); color:#fff; border:none; padding:1rem; cursor:pointer; }
+button:disabled { opacity:.6; cursor:not-allowed; }
+.pill { border-radius:1rem; margin:.2rem; display:inline-block; cursor:pointer; user-select: none; }
+.modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; }
+.modal.active { display:flex; }
+.modal-content { background:#fff; padding:1rem; border-radius:1rem; box-shadow:var(--shadow); width:90%; }
+.modal-header { display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap;}
+.modal-body { margin-top:.5rem; display:flex; flex-direction: row; width: auto; height: auto; flex-wrap: wrap;}
+.modal-footer { margin-top:.5rem; text-align:right; }
+.toast-container { position:fixed; bottom:1rem; right:1rem; display:flex; flex-direction:column; gap:.5rem; }
+.toast { background:#333; color:#fff; padding:.5rem 1rem; border-radius:1rem; box-shadow:var(--shadow); display:flex; align-items:center; justify-content:space-between; }
+.filters { margin-bottom:1rem; }
+input[type=file], select, input[type=text] { width:100%; padding:1rem; }
+img.preview { max-width:100%; max-height:100px; }
+#settings input, #settings button { margin:0.5rem; }
+#settings button,#settings input {background: transparent;  border: none;  padding: 1rem;  cursor: pointer;  position: relative;  font-size: 1rem;  color: #333;  border: 1px solid;}
+#settings button.active {  background-color: var(--accent);  color: #fff;   padding: 1rem;}
+#settings button.active::after {  content: '';  position: absolute;  bottom: 0;  left: 0;  right: 0;  height: 3px;  background: #fff;}
+#overview > *{ margin:1rem; }
+#overview #outfits div.outfit {cursor:pointer}
+#overview #outfits div.outfit img{width:50px; height:50px;}
+#overview .add-outfit-inline {}
+#overview .add-outfit-inline > * {width: 14rem;}
+</style>
 </head>
+
 <body>
-  <h1>Outfit Planer</h1>
-  <form id="uploadForm">
-    <label>Foto des Kleidungsstücks: <input type="file" accept="image/*" required></label>
-    <label>Kategorie: 
-      <select required>
-        <option value="">--Kategorie wählen--</option>
-        <option value="Oberteil">Oberteil</option>
-        <option value="Hose">Hose</option>
-        <option value="Schuhe">Schuhe</option>
-        <option value="Accessoire">Accessoire</option>
-      </select>
-    </label>
-    <label>Farbe: <input type="text" placeholder="z.B. Blau" required></label>
-    <button type="submit">Hinzufügen</button>
-  </form>
+  <header>
+    <h1>👚 Katrins Outfit Planer</h1>
+  </header>
 
-  <h2>Kleidungsgalerie</h2>
-  <div>
-    <label>Filter: 
-      <select id="filterCategory">
-        <option value="">Alle Kategorien</option>
-        <option value="Oberteil">Oberteil</option>
-        <option value="Hose">Hose</option>
-        <option value="Schuhe">Schuhe</option>
-        <option value="Accessoire">Accessoire</option>
-      </select>
-    </label>
-    <input type="text" id="filterColor" placeholder="Farbe filtern">
-    <button onclick="renderGallery()">Anzeigen</button>
+  <nav>
+    <button id="tab-overview" class="active" data-target="overview">📋 Outfits</button>
+    <button id="tab-gallery" data-target="gallery">👗 Kleiderschrank</button>
+    <button id="tab-settings" data-target="settings">⚙️ Einstellungen</button>
+  </nav>
+
+  <div id="overview" class="section active">
+    <div id="outfits" class="outfits"></div>
+    <div id="emptyOutfits" class="card" style="display:none;">
+      Keine Outfits vorhanden. Leg jetzt dein erstes Outfit an!
+    </div>
+    <div class="add-outfit-inline">
+      <button id="createOutfitBtn" disabled>➕ Neues Outfit anlegen</button>
+      <input type="text" id="newOutfitName" placeholder="Outfit Name..." />
+    </div>
   </div>
-  <div class="gallery" id="gallery"></div>
+  <div id="gallery" class="section">
+    <div class="filters">
+      <div id="categoryFilters"></div>
+      <div id="colorFilters"></div>
+      <button id="clearFiltersBtn" style="display:none;">Filter löschen</button>
+    </div>
+    <div id="galleryItems" class="gallery"></div>
+    <div class="card add-card" id="addCard">➕ Neues Teil hinzufügen</div>
+  </div>
+  <div id="settings" class="section card">
+	  <div class="storage-meter">Speicher: <span id="storageUsage">0</span> / 5 MB</div>
+	  <button id="exportBtn">⬇️ Sichern</button>
+	  <div>Laden <input type="file" id="importInput" accept="application/json" style="width:50%"/></div>
+	  <button id="clearAllBtn" style="background:#e74c3c;color:white">🗑️ Alles löschen</button>
+	  <div id="lastBackup"></div>
+  </div>
+  <div id="modalAdd" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Neues Teil</h2>
+        <button id="modalCloseBtn" title="Schließen">✖️</button>
+      </div>
+      <div class="modal-body">
+        <input type="file" id="imgInput" accept="image/*" />
+        <select id="catSelect"><option value="">Kategorie</option></select>
+        <select id="colSelect"><option value="">Farbe</option></select>
+        <canvas id="imgCanvas" style="display:none;"></canvas>
+        <img id="imgPreview" class="preview" style="display:none;" />
+        <button id="saveImgBtn" disabled>✅ Hinzufügen</button>
+      </div>
+      <div class="modal-footer">
+        <button id="modalCancelBtn">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+  <div id="modalDetail" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="detailTitle"></h2>
+        <div>
+          <button id="renameOutfitBtn" title="Bearbeiten">✏️</button>
+          <button id="deleteOutfitBtn" title="Löschen">🗑️</button>
+          <button id="modalDetailClose" title="Schließen">✖️</button>
+        </div>
+      </div>
+      <div class="modal-body" id="detailBody"></div>
+      <div class="modal-footer">
+        <button id="detailAddMore">➕ Teile hinzufügen</button>
+      </div>
+    </div>
+  </div>
 
-  <h2>Outfit-Zusammenstellung</h2>
-  <div class="canvas" id="canvas"></div>
-  <button onclick="saveOutfit()">Outfit speichern</button>
+  <div class="toast-container" id="toastContainer"></div>
 
   <script>
-    let clothes = JSON.parse(localStorage.getItem('clothes')) || [];
-    let canvas = [];
+    const categories = ["Kopfbedeckung","Jacke","Pullover","Oberteil","Kleid","Hose","Rock","Schuhe","Accessoire"];
+    const colors     = ["Blau","Rot","Grün","Schwarz","Weiß","Grau","Beige","Gelb","Lila","Pink","Braun","Orange","Violett","Türkis"];
+    let clothes       = JSON.parse(localStorage.getItem('clothes') || '[]');
+    let outfits       = JSON.parse(localStorage.getItem('outfits') || '{}');
+    let currentDetailOutfit = '';
 
-    document.getElementById('uploadForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const fileInput = this.querySelector('input[type=file]');
-      const category = this.querySelector('select').value;
-      const color = this.querySelector('input[type=text]').value.trim();
+    const tabs            = document.querySelectorAll('nav button');
+    const sections        = document.querySelectorAll('.section');
+    const storageUsage    = document.getElementById('storageUsage');
+    const newOutfitName   = document.getElementById('newOutfitName');
+    const createOutfitBtn = document.getElementById('createOutfitBtn');
+    const outfitsDiv      = document.getElementById('outfits');
+    const emptyOutfits    = document.getElementById('emptyOutfits');
+    const categoryFilters = document.getElementById('categoryFilters');
+    const colorFilters    = document.getElementById('colorFilters');
+    const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+    const galleryItems    = document.getElementById('galleryItems');
+    const addCard         = document.getElementById('addCard');
+    const modalAdd        = document.getElementById('modalAdd');
+    const modalClose      = document.getElementById('modalCloseBtn');
+    const modalCancel     = document.getElementById('modalCancelBtn');
+    const imgInput        = document.getElementById('imgInput');
+    const catSelect       = document.getElementById('catSelect');
+    const colSelect       = document.getElementById('colSelect');
+    const imgCanvas       = document.getElementById('imgCanvas');
+    const imgPreview      = document.getElementById('imgPreview');
+    const saveImgBtn      = document.getElementById('saveImgBtn');
+    const exportBtn       = document.getElementById('exportBtn');
+    const importInput     = document.getElementById('importInput');
+    const clearAllBtn     = document.getElementById('clearAllBtn');
+    const toastContainer  = document.getElementById('toastContainer');
+    const modalDetail     = document.getElementById('modalDetail');
+    const detailTitle     = document.getElementById('detailTitle');
+    const detailBody      = document.getElementById('detailBody');
+    const renameBtn       = document.getElementById('renameOutfitBtn');
+    const deleteBtn       = document.getElementById('deleteOutfitBtn');
+    const detailClose     = document.getElementById('modalDetailClose');
+    const detailAddMore   = document.getElementById('detailAddMore');
+    let selectedCats = new Set(), selectedCols = new Set();
 
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        clothes.push({ src: event.target.result, category, color });
-        localStorage.setItem('clothes', JSON.stringify(clothes));
+    function init(){
+      tabs.forEach(b => b.onclick = () => switchTab(b));
+      categories.forEach(c => catSelect.append(new Option(c,c)));
+      colors.forEach(c => colSelect.append(new Option(c,c)));
+      newOutfitName.oninput = () => createOutfitBtn.disabled = !newOutfitName.value.trim();
+      createOutfitBtn.onclick = createOutfit;
+      clearFiltersBtn.onclick = () => {
+        selectedCats.clear();
+        selectedCols.clear();
+        renderFilters();
         renderGallery();
-        fileInput.value = '';
+      };
+      addCard.onclick     = openAddModal;
+      modalClose.onclick  = closeAddModal;
+      modalCancel.onclick = closeAddModal;
+      imgInput.onchange   = handleImage;
+      catSelect.onchange  = enableSave;
+      colSelect.onchange  = enableSave;
+      saveImgBtn.onclick  = saveImage;
+
+      exportBtn.onclick   = exportData;
+      importInput.onchange= importData;
+      clearAllBtn.onclick = resetAll;
+
+      detailClose.onclick   = closeDetailModal;
+      renameBtn.onclick     = renameDetail;
+      deleteBtn.onclick     = deleteDetail;
+      detailAddMore.onclick = () => {
+        modalDetail.classList.remove('active');
+        switchTab(document.getElementById('tab-gallery'));
+        addCard.style.display = 'none';
+        renderGallery();
+      };
+
+      renderFilters();
+      renderGallery();
+      renderOutfits();
+      updateStorage();
+    }
+
+    // Tab switching
+    function switchTab(btn){
+      tabs.forEach(b => b.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.target).classList.add('active');
+      if (btn.dataset.target !== 'gallery') currentDetailOutfit = '';
+      renderGallery();
+    }
+
+    function updateStorage(){
+      const usageMB = new Blob(Object.values(localStorage)).size / (1024*1024);
+      storageUsage.textContent = usageMB.toFixed(2);
+    }
+
+	function sortOutfits(a, b) {
+       const indexA = categories.indexOf(a.category);
+       const indexB = categories.indexOf(b.category);
+       const effectiveIndexA = indexA === -1 ? categories.length : indexA;
+       const effectiveIndexB = indexB === -1 ? categories.length : indexB;
+       return effectiveIndexA - effectiveIndexB;
+    }
+
+    // Outfits list
+    function renderOutfits(){
+      outfitsDiv.innerHTML = '';
+      const names = Object.keys(outfits).sort();
+      if (!names.length) {
+        emptyOutfits.style.display = 'block';
+        return;
       }
-      if (fileInput.files[0]) reader.readAsDataURL(fileInput.files[0]);
-    });
-
-    function renderGallery() {
-      const gallery = document.getElementById('gallery');
-      gallery.innerHTML = '';
-      const catFilter = document.getElementById('filterCategory').value;
-      const colorFilter = document.getElementById('filterColor').value.trim().toLowerCase();
-
-      clothes.filter(c => 
-        (!catFilter || c.category === catFilter) &&
-        (!colorFilter || c.color.toLowerCase().includes(colorFilter))
-      ).forEach((item, index) => {
-        const div = document.createElement('div');
-        div.className = 'item';
-        div.innerHTML = `<img src="${item.src}" alt=""><div>${item.category} - ${item.color}</div>`;
-        div.onclick = () => addToCanvas(index);
-        gallery.appendChild(div);
+      emptyOutfits.style.display = 'none';
+      names.forEach(name => {
+        const card = document.createElement('div');
+        card.className = 'card outfit';
+		let imgs='';
+		outfits[name] = [...new Set(outfits[name])]
+		outfits[name].sort(sortOutfits);
+		outfits[name].forEach((item, i) => {
+			imgs += `<img src="${item.src}" />`
+		});
+        card.innerHTML = `<strong>${name} ${imgs}</strong>`;
+        card.onclick = () => openDetailModal(name);
+        outfitsDiv.append(card);
       });
     }
 
-    function addToCanvas(index) {
-      canvas.push(clothes[index]);
-      renderCanvas();
+    function createOutfit(){
+      const name = newOutfitName.value.trim();
+      if (name && !outfits[name]) {
+        outfits[name] = [];
+        localStorage.setItem('outfits', JSON.stringify(outfits));
+        newOutfitName.value = '';
+        createOutfitBtn.disabled = true;
+        renderOutfits();
+        showToast('Outfit erstellt');
+      }
     }
 
-    function renderCanvas() {
-      const canvasDiv = document.getElementById('canvas');
-      canvasDiv.innerHTML = '';
-      canvas.forEach((item, i) => {
-        const div = document.createElement('div');
-        div.className = 'item';
-        div.innerHTML = `<img src="${item.src}" alt=""><div>${item.category}</div>`;
-        div.onclick = () => { canvas.splice(i, 1); renderCanvas(); };
-        canvasDiv.appendChild(div);
+    // Detail modal
+    function openDetailModal(name){
+      currentDetailOutfit = name;
+      detailTitle.textContent = name;
+      renderDetail();
+      modalDetail.classList.add('active');
+    }
+
+    function closeDetailModal(){
+      modalDetail.classList.remove('active');
+      currentDetailOutfit = '';
+    }
+
+    function renderDetail(){
+      detailBody.innerHTML = '';
+      outfits[currentDetailOutfit].forEach((item, i) => {
+        const d = document.createElement('div');
+        d.className = 'card';
+        d.innerHTML = `<div>${item.category}-${item.color}</div><img src="${item.src}" />`;
+        const btn = document.createElement('button');
+        btn.textContent = '🗑️';
+		btn.title = 'Löschen' ;
+        btn.onclick = () => removeFromDetail(i);
+        d.append(btn);
+        detailBody.append(d);
       });
     }
-
-    function saveOutfit() {
-      let outfits = JSON.parse(localStorage.getItem('outfits')) || [];
-      outfits.push(canvas);
+    function removeFromDetail(i){
+      outfits[currentDetailOutfit].splice(i, 1);
       localStorage.setItem('outfits', JSON.stringify(outfits));
-      alert('Outfit gespeichert!');
-      canvas = [];
-      renderCanvas();
+	  renderOutfits();
+      renderDetail();
+      showToast('Teil entfernt');
+    }
+    function renameDetail(){
+      const newName = prompt('Neuer Name:', currentDetailOutfit);
+      if (newName && newName !== currentDetailOutfit){
+        outfits[newName] = outfits[currentDetailOutfit];
+        delete outfits[currentDetailOutfit];
+        localStorage.setItem('outfits', JSON.stringify(outfits));
+        renderOutfits();
+        openDetailModal(newName);
+      }
+    }
+    function deleteDetail(){
+      if (confirm('Wirklich löschen?')){
+        delete outfits[currentDetailOutfit];
+        localStorage.setItem('outfits', JSON.stringify(outfits));
+        renderOutfits();
+        closeDetailModal();
+      }
     }
 
-    renderGallery();
+    // Filters
+    function renderFilters(){
+      categoryFilters.innerHTML = '';
+      colorFilters.innerHTML = '';
+      categories.forEach(c => createPill(categoryFilters, c, selectedCats));
+      colors.forEach(c => createPill(colorFilters, c, selectedCols));
+      clearFiltersBtn.style.display = (selectedCats.size || selectedCols.size) ? 'inline-block' : 'none';
+    }
+    function createPill(container, text, set){
+      const pill = document.createElement('span');
+      pill.className = 'pill';
+      pill.textContent = text;
+      pill.style.opacity = set.has(text) ? '0.6' : '1';
+      pill.onclick = () => {
+        set.has(text) ? set.delete(text) : set.add(text);
+        renderFilters();
+        renderGallery();
+      };
+      container.append(pill);
+    }
+
+    function renderGallery(){
+      galleryItems.innerHTML = '';
+      addCard.style.display = currentDetailOutfit ? 'none' : 'block';
+      clothes.sort(sortOutfits)
+        .filter(item =>
+          (!selectedCats.size || selectedCats.has(item.category)) &&
+          (!selectedCols.size || selectedCols.has(item.color))
+        )
+        .forEach(item => {
+          const d = document.createElement('div');
+          d.className = 'card';
+          d.innerHTML = `<div>${item.category}-${item.color}</div><img src="${item.src}" />`;
+          if (currentDetailOutfit) {
+            d.onclick = () => {
+              outfits[currentDetailOutfit].push(item);
+			  outfits[currentDetailOutfit] = [...new Set(outfits[currentDetailOutfit])];
+		      outfits[currentDetailOutfit].sort(sortOutfits)
+              localStorage.setItem('outfits', JSON.stringify(outfits));
+              renderDetail();
+			  renderOutfits();
+              showToast('Teil hinzugefügt');
+            };
+          }
+          galleryItems.append(d);
+        });
+      updateStorage();
+    }
+
+    // Add Modal Logic
+    function openAddModal(){ modalAdd.classList.add('active'); }
+    function closeAddModal(){ modalAdd.classList.remove('active'); resetModal(); }
+    function handleImage(){
+      const file = imgInput.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = new Image();
+          img.onload = () => {
+            imgCanvas.width = 100;
+            imgCanvas.height = 100;
+            imgCanvas.getContext('2d').drawImage(img, 0, 0, 100, 100);
+            imgPreview.src = imgCanvas.toDataURL('image/png');
+            imgPreview.style.display = 'block';
+            enableSave();
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function enableSave(){
+      saveImgBtn.disabled = !(imgPreview.src && catSelect.value && colSelect.value);
+    }
+
+    function saveImage(){
+      clothes.push({ src: imgPreview.src, category: catSelect.value, color: colSelect.value });
+      clothes = [...new Set(clothes)];
+      localStorage.setItem('clothes', JSON.stringify(clothes));
+      renderGallery();
+      renderOutfits();
+      closeAddModal();
+      showToast('Teil hinzugefügt');
+    }
+
+    function resetModal(){
+      imgInput.value = '';
+      imgPreview.style.display = 'none';
+      saveImgBtn.disabled = true;
+      catSelect.value = '';
+      colSelect.value = '';
+    }
+
+    function showToast(msg){
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.textContent = msg;
+      toastContainer.append(t);
+      setTimeout(() => t.remove(), 3000);
+    }
+
+    function exportData(){
+      const data = JSON.stringify({ clothes, outfits });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+      a.download = 'outfits.json';
+      a.click();
+      localStorage.setItem('lastBackup', new Date().toLocaleString());
+      document.getElementById('lastBackup').textContent = 'Letztes Backup: ' + localStorage.getItem('lastBackup');
+    }
+
+    function importData(e){
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const d = JSON.parse(reader.result);
+          if (d.clothes && d.outfits) {
+			d.clothes = [...new Set(d.clothes)]
+			d.outfits = [...new Set(d.outfits)]
+            localStorage.setItem('clothes', JSON.stringify(d.clothes));
+            localStorage.setItem('outfits', JSON.stringify(d.outfits));
+            location.reload();
+          }
+        } catch {}
+      };
+      reader.readAsText(file);
+    }
+
+    function resetAll(){
+      if (confirm('Wirklich alle Daten löschen?')) {
+        localStorage.clear();
+        location.reload();
+      }
+    }
+
+    init();
+	if ('serviceWorker' in navigator) {
+	  navigator.serviceWorker.register(location.href.replace(/[^/]+$/, 'sw.js')).then(() => {
+		console.log('Service Worker registered');
+	  });
+    }
   </script>
 </body>
 </html>
