@@ -1,4 +1,4 @@
-# Katrin’s Outfit Planner
+# Outfit Planner
 
 A simple web app prototype that lets you create, save, and manage digital outfits from photos of your clothing.
 

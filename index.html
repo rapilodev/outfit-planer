@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="manifest" href="manifest.json">
-<title>Outfit Planer</title>
+<title>Outfit Planner</title>
 <style>
 :root { --accent: #7b68ee; --bg: #f7f8ff; --card:#fff; --border:#ddd; --shadow:0 2px 8px rgba(0,0,0,.05); }
 * { box-sizing:border-box; border-radius:1rem; }
@@ -47,22 +47,22 @@ img.preview { max-width:100%; max-height:100px; }
 
 <body>
   <header>
-    <h1>👚 Katrins Outfit Planer</h1>
+    <h1>👚 Outfit Planner</h1>
   </header>
 
   <nav>
     <button id="tab-overview" class="active" data-target="overview">📋 Outfits</button>
-    <button id="tab-gallery" data-target="gallery">👗 Kleiderschrank</button>
-    <button id="tab-settings" data-target="settings">⚙️ Einstellungen</button>
+    <button id="tab-gallery" data-target="gallery">👗 Wardrobe</button>
+    <button id="tab-settings" data-target="settings">⚙️ Settings</button>
   </nav>
 
   <div id="overview" class="section active">
     <div id="outfits" class="outfits"></div>
     <div id="emptyOutfits" class="card" style="display:none;">
-      Keine Outfits vorhanden. Leg jetzt dein erstes Outfit an!
+      No outfits yet. Create your first outfit!
     </div>
     <div class="add-outfit-inline">
-      <button id="createOutfitBtn" disabled>➕ Neues Outfit anlegen</button>
+      <button id="createOutfitBtn" disabled>➕ Create New Outfit</button>
       <input type="text" id="newOutfitName" placeholder="Outfit Name..." />
     </div>
   </div>
@@ -70,34 +70,34 @@ img.preview { max-width:100%; max-height:100px; }
     <div class="filters">
       <div id="categoryFilters"></div>
       <div id="colorFilters"></div>
-      <button id="clearFiltersBtn" style="display:none;">Filter löschen</button>
+      <button id="clearFiltersBtn" style="display:none;">Clear Filters</button>
     </div>
     <div id="galleryItems" class="gallery"></div>
-    <div class="card add-card" id="addCard">➕ Neues Teil hinzufügen</div>
+    <div class="card add-card" id="addCard">➕ Add New Item</div>
   </div>
   <div id="settings" class="section card">
-	  <div class="storage-meter">Speicher: <span id="storageUsage">0</span> / 5 MB</div>
-	  <button id="exportBtn">⬇️ Sichern</button>
-	  <div>Laden <input type="file" id="importInput" accept="application/json" style="width:50%"/></div>
-	  <button id="clearAllBtn" style="background:#e74c3c;color:white">🗑️ Alles löschen</button>
+	  <div class="storage-meter">Storage: <span id="storageUsage">0</span> / 5 MB</div>
+	  <button id="exportBtn">⬇️ Export</button>
+	  <div>Import <input type="file" id="importInput" accept="application/json" style="width:50%"/></div>
+	  <button id="clearAllBtn" style="background:#e74c3c;color:white">🗑️ Clear All</button>
 	  <div id="lastBackup"></div>
   </div>
   <div id="modalAdd" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Neues Teil</h2>
-        <button id="modalCloseBtn" title="Schließen">✖️</button>
+        <h2>New Item</h2>
+        <button id="modalCloseBtn" title="Close">✖️</button>
       </div>
       <div class="modal-body">
         <input type="file" id="imgInput" accept="image/*" />
-        <select id="catSelect"><option value="">Kategorie</option></select>
-        <select id="colSelect"><option value="">Farbe</option></select>
+        <select id="catSelect"><option value="">Category</option></select>
+        <select id="colSelect"><option value="">Color</option></select>
         <canvas id="imgCanvas" style="display:none;"></canvas>
         <img id="imgPreview" class="preview" style="display:none;" />
-        <button id="saveImgBtn" disabled>✅ Hinzufügen</button>
+        <button id="saveImgBtn" disabled>✅ Add</button>
       </div>
       <div class="modal-footer">
-        <button id="modalCancelBtn">Abbrechen</button>
+        <button id="modalCancelBtn">Cancel</button>
       </div>
     </div>
   </div>
@@ -106,14 +106,14 @@ img.preview { max-width:100%; max-height:100px; }
       <div class="modal-header">
         <h2 id="detailTitle"></h2>
         <div>
-          <button id="renameOutfitBtn" title="Bearbeiten">✏️</button>
-          <button id="deleteOutfitBtn" title="Löschen">🗑️</button>
-          <button id="modalDetailClose" title="Schließen">✖️</button>
+          <button id="renameOutfitBtn" title="Edit">✏️</button>
+          <button id="deleteOutfitBtn" title="Delete">🗑️</button>
+          <button id="modalDetailClose" title="Close">✖️</button>
         </div>
       </div>
       <div class="modal-body" id="detailBody"></div>
       <div class="modal-footer">
-        <button id="detailAddMore">➕ Teile hinzufügen</button>
+        <button id="detailAddMore">➕ Add More Items</button>
       </div>
     </div>
   </div>
@@ -121,8 +121,8 @@ img.preview { max-width:100%; max-height:100px; }
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
-    const categories = ["Kopfbedeckung","Jacke","Pullover","Oberteil","Kleid","Hose","Rock","Schuhe","Accessoire"];
-    const colors     = ["Blau","Rot","Grün","Schwarz","Weiß","Grau","Beige","Gelb","Lila","Pink","Braun","Orange","Violett","Türkis"];
+    const categories = ["Headwear","Jacket","Sweater","Top","Dress","Pants","Skirt","Shoes","Accessory"];
+    const colors     = ["Blue","Red","Green","Black","White","Gray","Beige","Yellow","Purple","Pink","Brown","Orange","Violet","Turquoise"];
     let clothes       = JSON.parse(localStorage.getItem('clothes') || '[]');
     let outfits       = JSON.parse(localStorage.getItem('outfits') || '{}');
     let currentDetailOutfit = '';
@@ -201,7 +201,6 @@ img.preview { max-width:100%; max-height:100px; }
       updateStorage();
     }
 
-    // Tab switching
     function switchTab(btn){
       tabs.forEach(b => b.classList.remove('active'));
       sections.forEach(s => s.classList.remove('active'));
@@ -216,7 +215,7 @@ img.preview { max-width:100%; max-height:100px; }
       storageUsage.textContent = usageMB.toFixed(2);
     }
 
-	function sortOutfits(a, b) {
+    function sortOutfits(a, b) {
        const indexA = categories.indexOf(a.category);
        const indexB = categories.indexOf(b.category);
        const effectiveIndexA = indexA === -1 ? categories.length : indexA;
@@ -224,7 +223,6 @@ img.preview { max-width:100%; max-height:100px; }
        return effectiveIndexA - effectiveIndexB;
     }
 
-    // Outfits list
     function renderOutfits(){
       outfitsDiv.innerHTML = '';
       const names = Object.keys(outfits).sort();
@@ -236,12 +234,12 @@ img.preview { max-width:100%; max-height:100px; }
       names.forEach(name => {
         const card = document.createElement('div');
         card.className = 'card outfit';
-		let imgs='';
-		outfits[name] = [...new Set(outfits[name])]
-		outfits[name].sort(sortOutfits);
-		outfits[name].forEach((item, i) => {
-			imgs += `<img src="${item.src}" />`
-		});
+        let imgs = '';
+        outfits[name] = [...new Set(outfits[name])];
+        outfits[name].sort(sortOutfits);
+        outfits[name].forEach(item => {
+          imgs += `<img src="${item.src}" />`;
+        });
         card.innerHTML = `<strong>${name} ${imgs}</strong>`;
         card.onclick = () => openDetailModal(name);
         outfitsDiv.append(card);
@@ -256,11 +254,10 @@ img.preview { max-width:100%; max-height:100px; }
         newOutfitName.value = '';
         createOutfitBtn.disabled = true;
         renderOutfits();
-        showToast('Outfit erstellt');
+        showToast('Outfit created');
       }
     }
 
-    // Detail modal
     function openDetailModal(name){
       currentDetailOutfit = name;
       detailTitle.textContent = name;
@@ -278,24 +275,26 @@ img.preview { max-width:100%; max-height:100px; }
       outfits[currentDetailOutfit].forEach((item, i) => {
         const d = document.createElement('div');
         d.className = 'card';
-        d.innerHTML = `<div>${item.category}-${item.color}</div><img src="${item.src}" />`;
+        d.innerHTML = `<div>${item.category} - ${item.color}</div><img src="${item.src}" />`;
         const btn = document.createElement('button');
         btn.textContent = '🗑️';
-		btn.title = 'Löschen' ;
+        btn.title = 'Delete';
         btn.onclick = () => removeFromDetail(i);
         d.append(btn);
         detailBody.append(d);
       });
     }
+
     function removeFromDetail(i){
       outfits[currentDetailOutfit].splice(i, 1);
       localStorage.setItem('outfits', JSON.stringify(outfits));
-	  renderOutfits();
+      renderOutfits();
       renderDetail();
-      showToast('Teil entfernt');
+      showToast('Item removed');
     }
+
     function renameDetail(){
-      const newName = prompt('Neuer Name:', currentDetailOutfit);
+      const newName = prompt('New name:', currentDetailOutfit);
       if (newName && newName !== currentDetailOutfit){
         outfits[newName] = outfits[currentDetailOutfit];
         delete outfits[currentDetailOutfit];
@@ -304,8 +303,9 @@ img.preview { max-width:100%; max-height:100px; }
         openDetailModal(newName);
       }
     }
+
     function deleteDetail(){
-      if (confirm('Wirklich löschen?')){
+      if (confirm('Are you sure you want to delete this outfit?')){
         delete outfits[currentDetailOutfit];
         localStorage.setItem('outfits', JSON.stringify(outfits));
         renderOutfits();
@@ -313,7 +313,6 @@ img.preview { max-width:100%; max-height:100px; }
       }
     }
 
-    // Filters
     function renderFilters(){
       categoryFilters.innerHTML = '';
       colorFilters.innerHTML = '';
@@ -321,6 +320,7 @@ img.preview { max-width:100%; max-height:100px; }
       colors.forEach(c => createPill(colorFilters, c, selectedCols));
       clearFiltersBtn.style.display = (selectedCats.size || selectedCols.size) ? 'inline-block' : 'none';
     }
+
     function createPill(container, text, set){
       const pill = document.createElement('span');
       pill.className = 'pill';
@@ -345,16 +345,16 @@ img.preview { max-width:100%; max-height:100px; }
         .forEach(item => {
           const d = document.createElement('div');
           d.className = 'card';
-          d.innerHTML = `<div>${item.category}-${item.color}</div><img src="${item.src}" />`;
+          d.innerHTML = `<div>${item.category} - ${item.color}</div><img src="${item.src}" />`;
           if (currentDetailOutfit) {
             d.onclick = () => {
               outfits[currentDetailOutfit].push(item);
-			  outfits[currentDetailOutfit] = [...new Set(outfits[currentDetailOutfit])];
-		      outfits[currentDetailOutfit].sort(sortOutfits)
+              outfits[currentDetailOutfit] = [...new Set(outfits[currentDetailOutfit])];
+              outfits[currentDetailOutfit].sort(sortOutfits);
               localStorage.setItem('outfits', JSON.stringify(outfits));
               renderDetail();
-			  renderOutfits();
-              showToast('Teil hinzugefügt');
+              renderOutfits();
+              showToast('Item added');
             };
           }
           galleryItems.append(d);
@@ -362,7 +362,6 @@ img.preview { max-width:100%; max-height:100px; }
       updateStorage();
     }
 
-    // Add Modal Logic
     function openAddModal(){ modalAdd.classList.add('active'); }
     function closeAddModal(){ modalAdd.classList.remove('active'); resetModal(); }
     function handleImage(){
@@ -396,7 +395,7 @@ img.preview { max-width:100%; max-height:100px; }
       renderGallery();
       renderOutfits();
       closeAddModal();
-      showToast('Teil hinzugefügt');
+      showToast('Item added');
     }
 
     function resetModal(){
@@ -422,7 +421,7 @@ img.preview { max-width:100%; max-height:100px; }
       a.download = 'outfits.json';
       a.click();
       localStorage.setItem('lastBackup', new Date().toLocaleString());
-      document.getElementById('lastBackup').textContent = 'Letztes Backup: ' + localStorage.getItem('lastBackup');
+      document.getElementById('lastBackup').textContent = 'Last backup: ' + localStorage.getItem('lastBackup');
     }
 
     function importData(e){
@@ -433,8 +432,8 @@ img.preview { max-width:100%; max-height:100px; }
         try {
           const d = JSON.parse(reader.result);
           if (d.clothes && d.outfits) {
-			d.clothes = [...new Set(d.clothes)]
-			d.outfits = [...new Set(d.outfits)]
+            d.clothes = [...new Set(d.clothes)];
+            d.outfits = { ...d.outfits };
             localStorage.setItem('clothes', JSON.stringify(d.clothes));
             localStorage.setItem('outfits', JSON.stringify(d.outfits));
             location.reload();
@@ -445,17 +444,17 @@ img.preview { max-width:100%; max-height:100px; }
     }
 
     function resetAll(){
-      if (confirm('Wirklich alle Daten löschen?')) {
+      if (confirm('Are you sure you want to clear all data?')) {
         localStorage.clear();
         location.reload();
       }
     }
 
     init();
-	if ('serviceWorker' in navigator) {
-	  navigator.serviceWorker.register(location.href.replace(/[^/]+$/, 'sw.js')).then(() => {
-		console.log('Service Worker registered');
-	  });
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register(location.href.replace(/[^/]+$/, 'sw.js')).then(() => {
+        console.log('Service Worker registered');
+      });
     }
   </script>
 </body>
